@@ -63,15 +63,15 @@ wait "$unlock_pid"
 pkg="${selection##* }"
 
 if [[ "$selection" == "▶ Screen" ]]; then
-    scrcpy --video-codec=av1 -b16M
+    scrcpy --video-codec=av1 -b16M --mouse=uhid
 else
     scrcpy \
-        --new-display=1920x1080/200 \
+        --new-display=1080x720 \
         --flex-display \
         --video-codec=av1 \
         -b16M \
-        --start-app="$pkg" \
-        --no-vd-system-decorations
+        --start-app="$pkg" --mouse=uhid \
+        --no-vd-system-decorations # & sleep 3 && adb shell input keyevent KEYCODE_SLEEP
 fi
 
 sleep 0.1
