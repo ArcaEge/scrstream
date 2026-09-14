@@ -28,13 +28,23 @@ if [[ ! -s "$cache" ]]; then
     wait
 fi
 
-selection="$(
+if ! selection="$(
     {
         printf '%s\n' '▶ Screen'
         cat "$cache"
     } |
         rofi -dmenu -i -p "Android app"
-)"
+)"; then
+    wait "$unlock_pid"
+    sleep 0.1
+
+    if ! pgrep -x scrcpy >/dev/null; then
+        if adb shell dumpsys window | grep -q 'mDreamingLockscreen=false'; then
+            adb shell input keyevent KEYCODE_SLEEP
+        fi
+    fi
+    exit 0
+fi
 
 if [[ -z "$selection" ]]; then
     wait "$unlock_pid"
@@ -53,22 +63,21 @@ wait "$unlock_pid"
 pkg="${selection##* }"
 
 if [[ "$selection" == "▶ Screen" ]]; then
-    exec scrcpy --video-codec=av1 -b16M --power-off-on-close
+    scrcpy --video-codec=av1 -b16M
 else
-    exec scrcpy \
+    scrcpy \
         --new-display=1920x1080/200 \
         --flex-display \
         --video-codec=av1 \
         -b16M \
         --start-app="$pkg" \
-        --no-vd-system-decorations --power-off-on-close
+        --no-vd-system-decorations
 fi
 
 sleep 0.1
-adb shell input keyevent KEYCODE_SLEEP
 
-# if ! pgrep -x scrcpy >/dev/null; then
-    # if adb shell dumpsys window | grep -q 'mDreamingLockscreen=false'; then
-    #     adb shell input keyevent KEYCODE_SLEEP
-    # fi
-# fi
+if ! pgrep -x scrcpy >/dev/null; then
+    if adb shell dumpsys window | grep -q 'mDreamingLockscreen=false'; then
+        adb shell input keyevent KEYCODE_SLEEP
+    fi
+fi
